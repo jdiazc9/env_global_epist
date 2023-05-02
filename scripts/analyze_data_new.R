@@ -1225,156 +1225,70 @@ for (d in unique(ge_data$dose)) {
 linear_model_ok <- (sum(ltests$p_non_normal > 0.05 & ltests$p_heteroscedasticity > 0.05 & ltests$p_rescorr > 0.05))/nrow(ltests)
 cubic_model_better <- sum(ltests$p_cubic < 0.05)/nrow(ltests)
 
-tst <- ltests[ltests$p_non_normal < 0.05 | ltests$p_heteroscedasticity < 0.05 | ltests$p_rescorr < 0.05, ]
 
-# illustrate regionality through mutation C59R
-df <- ge_data[ge_data$dose == '1e3' & ge_data$knock_in == 'C59R', ]
-df$ellipse <- c(0, 1)[1 + grepl('S108N', df$background)]
-df <- rbind(df,
-            data.frame(dose = '1e3',
-                       knock_in = 'C59R',
-                       background = 'S108Nph',
-                       background_f = 0.4,
-                       d_f = 0.5,
-                       slope = mean(df$slope),
-                       ellipse = 1))
-df <- rbind(df,
-            data.frame(dose = '1e3',
-                       knock_in = 'C59R',
-                       background = 'S108Nph',
-                       background_f = 0.5,
-                       d_f = 0.4,
-                       slope = mean(df$slope),
-                       ellipse = 1))
-df <- rbind(df,
-            data.frame(dose = '1e3',
-                       knock_in = 'C59R',
-                       background = 'S108Nph',
-                       background_f = 0.5,
-                       d_f = 0.5,
-                       slope = mean(df$slope),
-                       ellipse = 1))
-df <- rbind(df,
-            data.frame(dose = '1e3',
-                       knock_in = 'C59R',
-                       background = 'ph',
-                       background_f = 0.1,
-                       d_f = 0.07,
-                       slope = mean(df$slope),
-                       ellipse = 0))
-df$color <- c(0, 1)[1 + grepl('ph', df$background)]
-df$ ellipse <- as.character(df$ellipse)
 
-ggplot(df, aes(x = background_f, y = d_f, group = ellipse, color = ellipse)) +
-  geom_point(data = df[df$color == 0, ],
-             color = 'black',
-             cex = 3) +
-  annotate("text", x = 0.15, y = 0.25, label = 'S108N not\nin background', color = 'gray', size = 6) +
-  annotate("text", x = 0.65, y = 0.75, label = 'S108N\nin background', color = mut_colors['S108N'], size = 6) +
-  scale_x_continuous(name = expression(paste('Background fitness, ', italic(f), '(', italic(B), ')', sep = '')),
-                     breaks = pretty_breaks(n = 3)) +
-  scale_y_continuous(name = expression(paste('Fitness effect of C59R, ', Delta, italic(f), sep = '')),
-                     breaks = pretty_breaks(n = 3)) +
-  scale_color_manual(values = c('gray', as.character(mut_colors['S108N']))) +
-  stat_ellipse() +
-  theme_bw() +
-  theme(aspect.ratio = 0.6,
-        panel.grid = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(size = 16, vjust = 0),
-        axis.title = element_text(size = 18),
-        axis.text = element_text(size = 16),
-        legend.position = 'none',
-        legend.title = element_text(size = 16),
-        legend.text = element_text(size = 14, hjust = 0),
-        panel.border = element_blank(),
-        axis.line = element_line(color = 'black'))
 
-ggsave(file = paste('../plots/regions.pdf', sep = ''),
-       device = 'pdf',
-       width = 125,
-       height = 125,
-       units = 'mm')
 
-# local vs global regressions
-df <- df[!grepl('ph', df$background) & df$color == 0, ]
-df <- rbind(df,
-            data.frame(dose = '1e3',
-                       knock_in = 'C59R',
-                       background = 'ph',
-                       background_f = range(df$background_f[df$ellipse == 0]) + 0.3*c(-1, 1)*diff(range(df$background_f[df$ellipse == 0])),
-                       d_f = c(0.05, -0.05) + range(df$d_f[df$ellipse == 0]) + 0.3*c(-1, 1)*diff(range(df$d_f[df$ellipse == 0])),
-                       slope = mean(df$slope),
-                       ellipse = 0,
-                       color = 1))
-df <- rbind(df,
-            data.frame(dose = '1e3',
-                       knock_in = 'C59R',
-                       background = 'ph',
-                       background_f = range(df$background_f[df$ellipse == 1]) + 0.3*c(-1, 1)*diff(range(df$background_f[df$ellipse == 1])),
-                       d_f = c(0.5, -0.65) + range(df$d_f[df$ellipse == 1]) + 0.3*c(-1, 1)*diff(range(df$d_f[df$ellipse == 1])),
-                       slope = mean(df$slope),
-                       ellipse = 1,
-                       color = 1))
 
-ggplot(df, aes(x = background_f, y = d_f)) +
-  geom_point(data = df[df$color == 0, ],
-             color = 'black',
-             cex = 3) +
-  geom_smooth(aes(group = ellipse, color = ellipse),
-              method = 'lm',
-              formula = y ~ x,
-              se = F) +
-  geom_smooth(method = 'nls',
-              formula = y ~ p1*x^3*exp(-p2*x),
+
+### SUPPLEMENTARY FIGURES
+
+# all global epistasis patterns
+
+plot_this <- NULL # some tweaking to homogenize y scales across rows
+for (focal_mut in unique(ge_data$knock_in)) {
+  rowlimits <- c(min(ge_data$d_f[ge_data$knock_in == focal_mut]),
+                 max(ge_data$d_f[ge_data$knock_in == focal_mut]))
+  mean_x <- aggregate(formula = background_f ~ dose,
+                      data = ge_data[ge_data$knock_in == focal_mut, ],
+                      FUN = mean)
+  plot_this <- rbind(plot_this,
+                     data.frame(dose = mean_x$dose,
+                                knock_in = focal_mut,
+                                background_f = mean_x$background_f,
+                                d_f = rep(rowlimits, length(unique(ge_data$dose)))))
+}
+plot_this$slope <- 0
+
+ggplot(ge_data, aes(x = background_f, y = d_f, color = slope)) +
+  geom_abline(slope = 0, intercept = 0, color = '#d1d3d4') +
+  geom_point(color = 'black') +
+  geom_blank(data = plot_this) +
+  facet_wrap(knock_in ~ dose,
+             nrow = length(mut_colors),
+             scales = 'free') +
+  geom_smooth(method = 'lm',
               se = F,
-              method.args = list(start = c(p1=1, p2=1)),
-              linetype = 'dashed',
-              color = mut_colors['C59R']) +
-  annotate("text",
-           x = 0.3, y = 0.005,
-           label = 'regional linear fit',
-           angle = -15,
-           color = 'gray',
-           size = 5) +
-  annotate("text",
-           x = 0.6, y = 0.15,
-           label = 'regional linear fit',
-           angle = -32,
-           color = mut_colors['S108N'],
-           size = 5) +
-  annotate("text",
-           x = 0, y = 0.5,
-           label = 'hypothetical\nnon-linear\n"global" fit',
-           color = mut_colors['C59R'],
-           size = 5) +
-  scale_x_continuous(name = expression(paste('Background fitness, ', italic(f), '(', italic(B), ')', sep = '')),
-                     breaks = pretty_breaks(n = 3),
-                     expand = c(0.1, 0.1)) +
-  scale_y_continuous(name = expression(paste('Fitness effect of C59R, ', Delta, italic(f), sep = '')),
-                     breaks = pretty_breaks(n = 3),
-                     expand = c(0.1, 0.1)) +
-  scale_color_manual(values = c('gray', as.character(mut_colors['S108N']))) +
+              formula = y~x,
+              fullrange = T) +
+  scale_x_continuous(name = 'F (genetic background)',
+                     breaks = pretty_breaks(n = 2)) +
+  scale_y_continuous(name = expression(paste(Delta, 'F', sep = '')),
+                     breaks = pretty_breaks(n = 2)) +
+  scale_color_gradient2(name = 'slope',
+                        low = '#1e9fd3',
+                        high = '#ef3a37',
+                        mid = 'white',
+                        midpoint = 0,
+                        breaks = c(-0.4, 0, 0.4),
+                        limits = c(-0.8, 0.8)) +
   theme_bw() +
   theme(aspect.ratio = 0.6,
         panel.grid = element_blank(),
         strip.background = element_blank(),
-        strip.text = element_text(size = 16, vjust = 0),
+        strip.text = element_blank(),
+        strip.text.y = element_text(angle = 0),
         axis.title = element_text(size = 18),
         axis.text = element_text(size = 16),
-        legend.position = 'none',
         legend.title = element_text(size = 16),
-        legend.text = element_text(size = 14, hjust = 0),
-        panel.border = element_blank(),
-        axis.line = element_line(color = 'black'))
+        legend.text = element_text(size = 14, hjust = 1)) +
+  guides(color = guide_colorbar(ticks.colour = NA))
 
-ggsave(file = paste('../plots/regions2.pdf', sep = ''),
+ggsave(file = paste('../plots/FEEs_', saveplot, '.pdf', sep = ''),
        device = 'pdf',
-       width = 125,
-       height = 125,
+       width = 380,
+       height = 200,
        units = 'mm')
-
-
 
 
 
@@ -1629,7 +1543,7 @@ slopes.rnd$sigmaF <- sigmaF[slopes.rnd$dose]
 slopes.rnd$sigma_rel <- slopes.rnd$sigma/slopes.rnd$sigmaF
 
 
-### EPISTASIS 'MAP': how mush epistasis is there? vs. how much of that epistasis is global?
+### EPISTASIS 'MAP': how much epistasis is there? vs. how much of that epistasis is global?
 
 global_epist_metric <- 'R2' # this is one of 'R2' or 'slope', depending on how we want to quantify the degree of global epistasis
 
