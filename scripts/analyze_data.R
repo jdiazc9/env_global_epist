@@ -683,7 +683,7 @@ getContributions <- function(mut_i, mut_j, save.plots = F) {
   # fitness effect
   df <- ge_data[ge_data$knock_in == mut_j, ]
   df <- df[!grepl(mut_i, df$background), ] # keep only backgrounds of i, B(i)
-  df_mean <- aggregate(formula = d_f~dose,
+  df_mean <- aggregate(d_f~dose,
                        data = df[, c('dose', 'd_f')],
                        FUN = mean) # means for each dose
   df_wt <- df[df$background == '', ] # fitness effect of mutation in wild-type
@@ -726,7 +726,7 @@ getContributions <- function(mut_i, mut_j, save.plots = F) {
                                    return(x)
                                  })
     f_bg_ij$f <- f_bg_ij$background_f + f_bg_ij$d_f
-    f_bg_ij <- aggregate(formula = f~background,
+    f_bg_ij <- aggregate(f~background,
                          data = f_bg_ij[, c('background', 'f')],
                          FUN = mean)
     f_bg_ij <- f_bg_ij[order(f_bg_ij$background), ]
@@ -747,7 +747,7 @@ getContributions <- function(mut_i, mut_j, save.plots = F) {
     
   }
   
-  eps_mean <- aggregate(formula = eps_ij~dose,
+  eps_mean <- aggregate(eps_ij~dose,
                         data = eps[, c('dose', 'eps_ij')],
                         FUN = mean)
   eps_wt <- eps[eps$background == '', ]
@@ -822,12 +822,12 @@ for(mut_i in muts) {
 }
 
 # average across backgrounds
-contrib_bgavg <- aggregate(formula = cbind(dF_j, eps_ij) ~ dose + focal_mut + mut_j,
+contrib_bgavg <- aggregate(cbind(dF_j, eps_ij) ~ dose + focal_mut + mut_j,
                            data = contrib,
                            FUN = mean)
 
 # get beta_ij and w_ij from dF_j and eps_ij
-sum_dF_j <- aggregate(formula = dF_j ~ focal_mut + dose,
+sum_dF_j <- aggregate(dF_j ~ focal_mut + dose,
                       data = contrib_bgavg,
                       FUN = function(x) sum(x^2))
 colnames(sum_dF_j)[3] <- 'sum_dF_j_squared'
@@ -840,7 +840,7 @@ contrib_bgavg$w_ij_times_beta_ij <- contrib_bgavg$w_ij * contrib_bgavg$beta_ij
 contrib_bgavg$w_ij_times_beta_ij_squared <- contrib_bgavg$w_ij * contrib_bgavg$beta_ij^2
 
 # get (weighted) mean, mean of squares, and CV of beta_ij
-contrib_avg <- aggregate(formula = cbind(w_ij_times_beta_ij, w_ij_times_beta_ij_squared) ~ dose + focal_mut,
+contrib_avg <- aggregate(cbind(w_ij_times_beta_ij, w_ij_times_beta_ij_squared) ~ dose + focal_mut,
                          data = contrib_bgavg,
                          FUN = sum)
 contrib_avg$CVw_beta_ij <- sqrt(contrib_avg$w_ij_times_beta_ij_squared - contrib_avg$w_ij_times_beta_ij^2) / contrib_avg$w_ij_times_beta_ij
@@ -1299,7 +1299,7 @@ plot_this <- NULL # some tweaking to homogenize y scales across rows
 for (focal_mut in unique(ge_data$knock_in)) {
   rowlimits <- c(min(ge_data$d_f[ge_data$knock_in == focal_mut]),
                  max(ge_data$d_f[ge_data$knock_in == focal_mut]))
-  mean_x <- aggregate(formula = background_f ~ dose,
+  mean_x <- aggregate(background_f ~ dose,
                       data = ge_data[ge_data$knock_in == focal_mut, ],
                       FUN = mean)
   plot_this <- rbind(plot_this,
