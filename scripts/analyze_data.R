@@ -58,6 +58,66 @@ ge_data$dose <- setNames(c('0', paste('1e', -2:6, sep = '')),
 ge_data <- ge_data[!(ge_data$dose %in% c('1e4', '1e5', '1e6')), ]
 
 
+tst <- ge_data[ge_data$dose == '1e1' & ge_data$knock_in == 'I164L', ]
+tst$background <- sapply(tst$background,
+                         FUN = function(x) {
+                           out <- strsplit(x, split = ',')[[1]]
+                           out <- substr(out, 1, 1)
+                           out <- paste(out, collapse = '')
+                           return(out)
+                         })
+tst$background[1] <- 'Wild-type'
+tst$background <- factor(tst$background,
+                         levels = tst$background)
+
+ggplot(tst, aes(x = background, y = d_f, fill = background)) +
+  geom_bar(stat = 'identity',
+           width = 0.85) +
+  scale_fill_manual(values = c('red', rep('gray', 6))) +
+  scale_x_discrete(name = 'Genetic background') +
+  scale_y_continuous(name = expression(Delta*italic(F))) +
+  geom_hline(yintercept = 0) +
+  theme_bw() +
+  theme(aspect.ratio = 0.5,
+        panel.grid = element_blank(),
+        legend.position = 'none',
+        axis.title = element_text(size = 18),
+        axis.text.x = element_text(size = 16,
+                                   angle = 45,
+                                   hjust = 1),
+        axis.text.y = element_text(size = 16),
+        plot.title = element_text(size = 18)) +
+  ggtitle('Focal mut.: I164L, dose: 10 uM')
+
+ggplot(tst, aes(x = background_f, y = d_f)) +
+  geom_hline(yintercept = 0,
+             color = 'gray') +
+  geom_smooth(method = 'lm',
+              formula = y ~ x,
+              se = F,
+              color = 'firebrick1') +
+  geom_point(cex = 3) +
+  scale_x_continuous(name = expression(paste('Genetic background fitness, ', italic(F)[B], sep = ''))) +
+  scale_y_continuous(name = expression(Delta*italic(F))) +
+  theme_bw() +
+  theme(aspect.ratio = 0.6,
+        panel.grid = element_blank(),
+        legend.position = 'none',
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 16),
+        plot.title = element_text(size = 18)) +
+  ggtitle('Focal mut.: I164L, dose: 10 uM')
+
+ggsave(file = paste('../plots/for_Alvaro_2.pdf', sep = ''),
+       device = 'pdf',
+       width = 120,
+       height = 100,
+       units = 'mm')
+
+
+
+
+
 
 ### FIG 1C: FEE OF FOCAL MUTATION (C59R) WITH NO DRUG
 
