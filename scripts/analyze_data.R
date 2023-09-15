@@ -1426,11 +1426,81 @@ ggsave(file = paste('../plots/epistMap_randomLandscapes_', saveplot, '.pdf', sep
 
 
 
+### REVISION FIG: fitness effect of each mutation on w.t. genotype
+
+df <- ge_data[ge_data$background == '', ]
+
+ggplot(df, aes(x = dose, y = d_f, fill = knock_in)) +
+  geom_bar(stat = 'identity') +
+  facet_wrap(~ knock_in,
+             ncol = 1,
+             scales = 'free_y') +
+  scale_fill_manual(values = mut_colors) +
+  scale_x_discrete(breaks = c('0', '1e-1', '1e1', '1e3'),
+                   labels = mylabels[c(1, 3, 5, 7)],
+                   name = expression(paste('Drug dose (', mu, 'M)', sep = ''))) +
+  scale_y_continuous(name = expression(paste('Fitness effect on wild-type, ', Delta*italic(f), '(w.t.)', sep = '')),
+                     breaks = pretty_breaks(n = 3)) +
+  theme_bw() +
+  theme(aspect.ratio = 0.6,
+        panel.grid = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 16, vjust = 0, hjust = 0),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 16),
+        axis.text.x = element_text(size = 16,
+                                   vjust = 0),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14, hjust = 1),
+        legend.position = 'none')
+
+ggsave(file = paste('../plots/fitness_effects_wt_', saveplot, '.pdf', sep = ''),
+       device = 'pdf',
+       width = 125,
+       height = 200,
+       units = 'mm')
 
 
 
 
+df <- aggregate(cbind(background_f, d_f) ~ dose,
+                data = df,
+                FUN = sum)
+df$background_f <- df$background_f / 4
+df$expected_f <- df$background_f + df$d_f  
+df <- merge(df[, c('dose', 'expected_f')],
+            unique(ge_data[ge_data$background == '', c('dose', 'background_f')]))
+df <- gather(df, group, value, expected_f:background_f)
 
+ggplot(df, aes(x = dose, y = value, fill = group)) +
+  geom_bar(stat = 'identity',
+           position = position_dodge(),
+           color = 'black') +
+  scale_fill_manual(values = fitness_colors[c(2, 1)],
+                    labels = c('Measured fitness', 'Expected if no epistasis\n(sum of individual fitness effects)')) +
+  scale_x_discrete(breaks = c('0', '1e-1', '1e1', '1e3'),
+                   labels = mylabels[c(1, 3, 5, 7)],
+                   name = expression(paste('Drug dose (', mu, 'M)', sep = ''))) +
+  scale_y_continuous(name = 'Fitnes\nof quadruple mutant',
+                     breaks = pretty_breaks(n = 3)) +
+  theme_bw() +
+  theme(aspect.ratio = 0.6,
+        panel.grid = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 16, vjust = 0, hjust = 0),
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 16),
+        axis.text.x = element_text(size = 16,
+                                   vjust = 0),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14, hjust = 0),
+        legend.position = 'bottom')
+
+ggsave(file = paste('../plots/fitness_effects_quad_vs_noEpist_', saveplot, '.pdf', sep = ''),
+       device = 'pdf',
+       width = 150,
+       height = 100,
+       units = 'mm')
 
 
 
