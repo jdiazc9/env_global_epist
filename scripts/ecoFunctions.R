@@ -112,7 +112,7 @@ makeGEdata <- function(data) {
     warning(paste('Multiple instances of a same combination in input data set:\n',
                   paste(names(table(data[, 1]))[table(data[, 1]) > 1], collapse = '\n'),
                   '\nAveraging F to proceed.', sep = ''))
-    data <- aggregate(formula = f ~ community,
+    data <- aggregate(f ~ community,
                       data = data,
                       FUN = mean)
   }
